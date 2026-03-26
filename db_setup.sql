@@ -45,9 +45,17 @@ CREATE TABLE Activity_Logs (
     CONSTRAINT fk_activity_user FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
--- Insert some default categories
 INSERT INTO Categories (name, description) VALUES ('Dank Memes', 'The dankest of the dank.');
 INSERT INTO Categories (name, description) VALUES ('Wholesome', 'Memes that make you smile.');
 INSERT INTO Categories (name, description) VALUES ('Programming', 'Relatable dev struggles.');
 INSERT INTO Categories (name, description) VALUES ('Animals', 'Funny pets and wildlife.');
+INSERT INTO Categories (name, description) VALUES ('Funny', 'Generally funny memes.');
+INSERT INTO Categories (name, description) VALUES ('Coding', 'Code-related humor.');
+INSERT INTO Categories (name, description) VALUES ('Gaming', 'Game-related memes.');
+INSERT INTO Categories (name, description) VALUES ('Sports', 'Sports memes.');
 COMMIT;
+
+-- ============ MIGRATION: Phase 3 — Multi-format Memes ============
+-- Run these statements manually on existing databases:
+-- ALTER TABLE Memes ADD meme_type VARCHAR2(10) DEFAULT 'image';
+-- ALTER TABLE Memes MODIFY image_url VARCHAR2(1000) NULL;

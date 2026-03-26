@@ -3,9 +3,31 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import oracledb from 'oracledb';
+import multer from 'multer';
+import path from 'path';
 import { getPool } from './db.js';
 
 const router = express.Router();
+
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, 'uploads/'),
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+const upload = multer({
+    storage,
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|webm|mov/;
+        const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mime = allowedTypes.test(file.mimetype);
+        if (ext || mime) return cb(null, true);
+        cb(new Error('Only image and video files are allowed'));
+    }
+});
 
 // Helper to log activity
 async function logActivity(userId, action, details) {
@@ -241,7 +263,7 @@ router.get('/memes', async (req, res) => {
         const pool = getPool();
         connection = await pool.getConnection();
         const result = await connection.execute(
-            `SELECT m.meme_id, m.title, m.image_url, m.description, m.created_at, u.name as author, c.name as category 
+            `SELECT m.meme_id, m.title, m.image_url, m.description, m.created_at, u.name as author, c.name as category, m.meme_type 
              FROM Memes m
              JOIN Users u ON m.user_id = u.user_id
              LEFT JOIN Categories c ON m.category_id = c.category_id
@@ -254,7 +276,8 @@ router.get('/memes', async (req, res) => {
             description: row[3],
             createdAt: row[4],
             author: row[5],
-            category: row[6]
+            category: row[6],
+            memeType: row[7] || 'image'
         }));
         res.json(memes);
     } catch (err) {
@@ -265,19 +288,34 @@ router.get('/memes', async (req, res) => {
     }
 });
 
-router.post('/memes', authenticateToken, async (req, res) => {
-    const { title, imageUrl, description, categoryId } = req.body;
+router.post('/memes', authenticateToken, upload.single('file'), async (req, res) => {
+    const { title, description, categoryId, memeType } = req.body;
+    const type = memeType || 'image';
+    let fileUrl = req.body.imageUrl || null;
+
+    // For file uploads, use the uploaded file path
+    if (req.file) {
+        fileUrl = `/uploads/${req.file.filename}`;
+    }
+
+    // For text memes, no file is required
+    if (type === 'text') {
+        fileUrl = null;
+    } else if (!fileUrl && !req.file) {
+        return res.status(400).json({ error: 'File or image URL is required for image/video memes' });
+    }
+
     let connection;
     try {
         const pool = getPool();
         connection = await pool.getConnection();
         await connection.execute(
-            `INSERT INTO Memes (user_id, category_id, title, image_url, description) 
-             VALUES (:userId, :categoryId, :title, :imageUrl, :description)`,
-            { userId: req.user.userId, categoryId, title, imageUrl, description },
+            `INSERT INTO Memes (user_id, category_id, title, image_url, description, meme_type) 
+             VALUES (:userId, :categoryId, :title, :imageUrl, :description, :memeType)`,
+            { userId: req.user.userId, categoryId, title, imageUrl: fileUrl, description, memeType: type },
             { autoCommit: true }
         );
-        await logActivity(req.user.userId, 'CREATE_MEME', `User created meme: ${title}`);
+        await logActivity(req.user.userId, 'CREATE_MEME', `User created ${type} meme: ${title}`);
         res.status(201).json({ message: 'Meme created successfully' });
     } catch (err) {
         console.error(err);
