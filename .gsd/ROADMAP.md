@@ -35,6 +35,11 @@
 ### Phase 5: Polish, Testing, and Launch
 **Status**: ✅ Complete
 **Objective**: End-to-end testing across devices, finalize skeuomorphic refinements, fix bugs, and ensure constraints are met.
+**Requirements**: REQ-01, REQ-02, REQ-03, REQ-04, REQ-05, REQ-06, REQ-07, REQ-08, REQ-09
+
+### Phase 6: Discovery & Enhanced Interaction
+**Status**: ⬜ Not Started
+**Objective**: Implement search functionality, trending/popularity sorting, and public profile views to increase user engagement.
 
 ---
-**Final Status**: 🏆 Milestone v1.0 Achieved.
+**Current Status**: 🏆 Milestone v1.0 Achieved. Planning v1.1.
