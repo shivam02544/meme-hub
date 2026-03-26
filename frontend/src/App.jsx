@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
 import Navbar from './components/Navbar';
 
 function App() {
@@ -30,6 +31,12 @@ function App() {
     setUser(null);
   };
 
+  const handleUserUpdate = (updatedUser) => {
+    const merged = { ...user, ...updatedUser };
+    localStorage.setItem('user', JSON.stringify(merged));
+    setUser(merged);
+  };
+
   if (loading) return null;
 
   return (
@@ -45,6 +52,10 @@ function App() {
             <Route 
               path="/register" 
               element={!user ? <Register onLogin={handleLogin} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/profile" 
+              element={user ? <Profile user={user} onUserUpdate={handleUserUpdate} /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/" 

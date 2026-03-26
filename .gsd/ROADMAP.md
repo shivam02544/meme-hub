@@ -18,7 +18,7 @@
 **Requirements**: REQ-09
 
 ### Phase 2: User Profiles & Advanced Auth (Frontend + Backend)
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Build out the user profile edit functionality, integrate and stabilize the existing Express OTP auth flow with the new UI.
 **Requirements**: REQ-01, REQ-02
 

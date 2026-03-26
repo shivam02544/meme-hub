@@ -379,4 +379,30 @@ router.get('/stats/categories', async (req, res) => {
     }
 });
 
+// ============ USER PROFILE ============
+
+// Update user profile
+router.put('/users/profile', authenticateToken, async (req, res) => {
+    let connection;
+    try {
+        const { name } = req.body;
+        if (!name || name.trim().length === 0) {
+            return res.status(400).json({ error: 'Name is required' });
+        }
+        connection = await getPool().getConnection();
+        await connection.execute(
+            `UPDATE Users SET name = :name WHERE id = :id`,
+            { name: name.trim(), id: req.user.id },
+            { autoCommit: true }
+        );
+        await logActivity(connection, req.user.id, 'PROFILE_UPDATE', `Updated name to ${name.trim()}`);
+        res.json({ message: 'Profile updated successfully', user: { id: req.user.id, name: name.trim(), email: req.user.email } });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
+
 export default router;

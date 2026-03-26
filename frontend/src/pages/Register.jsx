@@ -51,7 +51,7 @@ export default function Register({ onLogin }) {
       <div className="auth-card">
         <div className="auth-header">
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-            <div style={{ background: 'rgba(236, 72, 153, 0.1)', padding: '1rem', borderRadius: '50%' }}>
+            <div style={{ boxShadow: 'var(--shadow-outset-sm)', padding: '1rem', borderRadius: '50%', background: 'var(--surface-color)' }}>
               {!showOtp ? <UserPlus size={32} color="var(--accent-color)" /> : <KeyRound size={32} color="var(--accent-color)" />}
             </div>
           </div>
@@ -96,7 +96,7 @@ export default function Register({ onLogin }) {
                 required 
               />
             </div>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, var(--accent-color), var(--primary-color))' }} disabled={loading}>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>

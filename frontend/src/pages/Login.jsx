@@ -54,7 +54,7 @@ export default function Login({ onLogin }) {
       <div className="auth-card">
         <div className="auth-header">
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-            <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '1rem', borderRadius: '50%' }}>
+            <div style={{ boxShadow: 'var(--shadow-outset-sm)', padding: '1rem', borderRadius: '50%', background: 'var(--surface-color)' }}>
               {!showOtp ? <LogIn size={32} color="var(--primary-color)" /> : <KeyRound size={32} color="var(--primary-color)" />}
             </div>
           </div>
@@ -110,7 +110,7 @@ export default function Login({ onLogin }) {
             </button>
             <button 
               type="button" 
-              className="btn btn-outline mt-4" 
+              className="btn mt-4" 
               style={{ width: '100%' }}
               onClick={() => setShowOtp(false)}
             >
