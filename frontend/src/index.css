@@ -6,8 +6,9 @@
   --surface-lighter: #ffffff;
   --primary-color: #6366f1;
   --primary-hover: #4f46e5;
-  --text-active: #2d3748;
-  --text-muted: #64748b;
+  --text-active: #131a26;
+  --text-muted: #475569;
+  --text-dim: #64748b;
   --accent-color: #ec4899;
   --danger-color: #ef4444;
   --success-color: #10b981;
@@ -323,3 +324,29 @@ p { color: var(--text-muted); }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+/* Profile */
+.profile-card {
+  max-width: 900px;
+  margin: 0 auto 3rem;
+  padding: 2.5rem;
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .profile-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+  }
+}
+
+/* Typography Scaling */
+@media (max-width: 600px) {
+  body { font-size: 16px; }
+  h1 { font-size: 2rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  .meme-title { font-size: 1.15rem !important; }
+}

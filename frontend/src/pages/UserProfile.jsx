@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { User, Calendar, Image as ImageIcon, ArrowLeft } from 'lucide-react';
-// MemeCard logic is currently inline or can be extracted later
+import MemeCard from '../components/MemeCard';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -24,6 +24,11 @@ export default function UserProfile() {
         setProfile(profileRes.data);
         setMemes(memesRes.data);
       } catch (err) {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
         setError('Failed to load profile');
       } finally {
         setLoading(false);
@@ -31,6 +36,24 @@ export default function UserProfile() {
     };
     fetchProfileData();
   }, [id]);
+
+  const handleLike = async (memeId) => {
+    try {
+      const res = await axios.post(`${API_URL}/memes/${memeId}/like`, {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setMemes(prev => prev.map(m => m.id === memeId ? {
+        ...m, likeCount: res.data.liked ? m.likeCount + 1 : m.likeCount - 1
+      } : m));
+    } catch (err) { 
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+      setError('Failed to like meme'); 
+    }
+  };
 
   if (loading) return <div className="container mt-4">Loading profile...</div>;
   if (error) return <div className="container mt-4 alert alert-error">{error}</div>;
@@ -41,13 +64,13 @@ export default function UserProfile() {
         <ArrowLeft size={18} /> Back to Feed
       </Link>
 
-      <div className="auth-card" style={{ maxWidth: '100%', marginBottom: '3rem', display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--surface-color)', boxShadow: 'var(--shadow-outset)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)' }}>
+      <div className="glass-card profile-card">
+        <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--glass-bg-lite)', border: '2px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)' }}>
           <User size={48} />
         </div>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: '2.5rem', color: 'var(--primary-color)', marginBottom: '0.5rem' }}>{profile.name}</h1>
-          <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--text-muted)', fontSize: '1rem' }}>
+          <h1 style={{ color: 'var(--primary-color)', marginBottom: '0.5rem' }}>{profile.name}</h1>
+          <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--text-muted)', fontSize: '1rem', flexWrap: 'wrap' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Calendar size={16} /> Joined {new Date(profile.createdAt).toLocaleDateString()}
             </span>
@@ -66,22 +89,11 @@ export default function UserProfile() {
           </div>
         ) : (
           memes.map(meme => (
-            <div key={meme.id} className="meme-card">
-               {/* Simplified MemeCard logic for now or extract to separate component */}
-               {meme.memeType === 'text' ? (
-                 <div className="meme-text-content" style={{ minHeight: '150px' }}>
-                   <p>{meme.description}</p>
-                 </div>
-               ) : (
-                 <div className="meme-image-wrapper">
-                    <img src={meme.imageUrl} alt={meme.title} className="meme-image" />
-                 </div>
-               )}
-               <div className="meme-content">
-                 <h3 className="meme-title">{meme.title}</h3>
-                 <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{meme.category}</p>
-               </div>
-            </div>
+            <MemeCard 
+              key={meme.id} 
+              meme={meme} 
+              onLike={handleLike} 
+            />
           ))
         )}
       </div>
