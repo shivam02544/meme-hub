@@ -146,34 +146,58 @@ export default function Dashboard({ user }) {
     );
   };
 
-  if (loading) return <div className="container mt-4"><div style={{ textAlign: 'center', padding: '3rem' }}>Loading awesome memes...</div></div>;
+  if (loading) return (
+    <div className="container mt-4">
+      <div className="page-header">
+        <div style={{ height: '3rem', width: '200px', background: 'var(--surface-color)', boxShadow: 'var(--shadow-inset)', borderRadius: 'var(--radius-md)' }}></div>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ height: '2.5rem', width: '100px', background: 'var(--surface-color)', boxShadow: 'var(--shadow-outset-sm)', borderRadius: 'var(--radius-md)' }}></div>
+          <div style={{ height: '2.5rem', width: '150px', background: 'var(--surface-color)', boxShadow: 'var(--shadow-outset-sm)', borderRadius: 'var(--radius-md)' }}></div>
+        </div>
+      </div>
+      <div className="meme-grid">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="meme-card" style={{ height: '400px', opacity: 0.5 }}>
+            <div style={{ margin: '1rem', height: '250px', background: 'var(--surface-color)', boxShadow: 'var(--shadow-inset)', borderRadius: 'var(--radius-md)' }}></div>
+            <div style={{ padding: '0 1.5rem', flex: 1 }}>
+              <div style={{ height: '1.5rem', width: '60%', background: 'var(--surface-color)', boxShadow: 'var(--shadow-inset)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}></div>
+              <div style={{ height: '1rem', width: '90%', background: 'var(--surface-color)', boxShadow: 'var(--shadow-inset)', borderRadius: 'var(--radius-sm)' }}></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="container">
       <div className="page-header">
         <div>
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.25rem', color: 'var(--primary-color)' }}>Meme Feed</h1>
-          <p>Discover the latest and greatest memes.</p>
+          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.25rem', color: 'var(--primary-color)', letterSpacing: '-0.02em' }}>Meme Feed</h1>
+          <p style={{ fontSize: '1.05rem' }}>Discover the latest and greatest memes.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn" onClick={() => setShowStatsModal(true)}><BarChart3 size={18} /> Stats</button>
-          <button className="btn btn-primary" onClick={() => setShowUploadModal(true)}><Plus size={18} /> Upload Meme</button>
+          <button className="btn btn-primary" onClick={() => setShowUploadModal(true)} style={{ boxShadow: 'var(--shadow-outset)' }}><Plus size={18} /> Upload Meme</button>
         </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
 
       {/* Category Filter */}
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '2.5rem', padding: '0.5rem', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-inset)', background: 'var(--surface-color)' }}>
         {['All', ...new Set(categories.map(c => c.name))].map(cat => (
           <button
             key={cat}
             className="btn"
             style={{
-              padding: '0.4rem 1rem', fontSize: '0.8rem',
-              boxShadow: activeFilter === cat ? 'var(--shadow-inset)' : 'var(--shadow-outset-sm)',
+              padding: '0.5rem 1.25rem', fontSize: '0.9rem',
+              boxShadow: activeFilter === cat ? 'var(--shadow-inset)' : 'none',
+              background: activeFilter === cat ? 'transparent' : 'var(--surface-color)',
               color: activeFilter === cat ? 'var(--primary-color)' : 'var(--text-muted)',
-              fontWeight: activeFilter === cat ? 600 : 400
+              fontWeight: activeFilter === cat ? 600 : 500,
+              borderRadius: 'var(--radius-md)',
+              border: activeFilter === cat ? 'none' : '1px solid rgba(255,255,255,0.3)'
             }}
             onClick={() => setActiveFilter(cat)}
           >
@@ -184,10 +208,16 @@ export default function Dashboard({ user }) {
 
       <div className="meme-grid">
         {filteredMemes.length === 0 ? (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 0', color: 'var(--text-muted)' }}>
-            <ImageIcon size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
-            <h3>No memes found</h3>
-            <p>Be the first to upload a meme!</p>
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '6rem 0', background: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-inset)', margin: '1rem 0' }}>
+            <div style={{ display: 'inline-flex', padding: '2rem', borderRadius: '50%', boxShadow: 'var(--shadow-outset)', marginBottom: '2rem', color: 'var(--text-muted)' }}>
+              <ImageIcon size={48} style={{ opacity: 0.3 }} />
+            </div>
+            <h3 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>No memes found in {activeFilter}</h3>
+            <p style={{ marginBottom: '2rem' }}>Be the first to upload a meme or try another category!</p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button className="btn" onClick={() => setActiveFilter('All')}>View All Memes</button>
+              <button className="btn btn-primary" onClick={() => setShowUploadModal(true)}>Upload Now</button>
+            </div>
           </div>
         ) : (
           filteredMemes.map(meme => (
