@@ -259,18 +259,42 @@ router.get('/categories', async (req, res) => {
 
 router.get('/memes', async (req, res) => {
     let connection;
+    const { q, sort, categoryId, userId } = req.query;
     try {
         const pool = getPool();
         connection = await pool.getConnection();
-        const result = await connection.execute(
-            `SELECT m.meme_id, m.title, m.image_url, m.description, m.created_at, u.name as author, c.name as category, m.meme_type,
-                    (SELECT COUNT(*) FROM Likes l WHERE l.meme_id = m.meme_id) as like_count,
-                    (SELECT COUNT(*) FROM Comments cm WHERE cm.meme_id = m.meme_id) as comment_count
-             FROM Memes m
-             JOIN Users u ON m.user_id = u.user_id
-             LEFT JOIN Categories c ON m.category_id = c.category_id
-             ORDER BY m.created_at DESC`
-        );
+
+        let sql = `
+            SELECT m.meme_id, m.title, m.image_url, m.description, m.created_at, u.name as author, c.name as category, m.meme_type, m.user_id,
+                   (SELECT COUNT(*) FROM Likes l WHERE l.meme_id = m.meme_id) as like_count,
+                   (SELECT COUNT(*) FROM Comments cm WHERE cm.meme_id = m.meme_id) as comment_count
+            FROM Memes m
+            JOIN Users u ON m.user_id = u.user_id
+            LEFT JOIN Categories c ON m.category_id = c.category_id
+            WHERE 1=1
+        `;
+
+        const binds = {};
+        if (q) {
+            sql += ` AND (LOWER(m.title) LIKE :q OR LOWER(m.description) LIKE :q)`;
+            binds.q = `%${q.toLowerCase()}%`;
+        }
+        if (categoryId) {
+            sql += ` AND m.category_id = :categoryId`;
+            binds.categoryId = parseInt(categoryId);
+        }
+        if (userId) {
+            sql += ` AND m.user_id = :userId`;
+            binds.userId = parseInt(userId);
+        }
+
+        if (sort === 'trending') {
+            sql += ` ORDER BY like_count DESC, m.created_at DESC`;
+        } else {
+            sql += ` ORDER BY m.created_at DESC`;
+        }
+
+        const result = await connection.execute(sql, binds);
         const memes = result.rows.map(row => ({
             id: row[0],
             title: row[1],
@@ -280,8 +304,9 @@ router.get('/memes', async (req, res) => {
             author: row[5],
             category: row[6],
             memeType: row[7] || 'image',
-            likeCount: row[8] || 0,
-            commentCount: row[9] || 0
+            userId: row[8],
+            likeCount: row[9] || 0,
+            commentCount: row[10] || 0
         }));
         res.json(memes);
     } catch (err) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Image as ImageIcon, BarChart3, Trash2, FileText, Video, Upload, Heart, MessageCircle, Send } from 'lucide-react';
+import { Plus, Image as ImageIcon, BarChart3, Trash2, FileText, Video, Upload, Heart, MessageCircle, Send, Search, TrendingUp, Clock } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -11,6 +11,8 @@ export default function Dashboard({ user }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('latest'); // 'latest' or 'trending'
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
@@ -23,7 +25,12 @@ export default function Dashboard({ user }) {
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchData();
+    }, 400);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, activeFilter, sortOrder]);
 
   const getHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -32,15 +39,22 @@ export default function Dashboard({ user }) {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const catObj = categories.find(c => c.name === activeFilter);
+      const params = {
+        q: searchTerm,
+        sort: sortOrder,
+        categoryId: catObj ? catObj.id : undefined
+      };
+
       const [memesRes, categoriesRes, statsRes] = await Promise.all([
-        axios.get(`${API_URL}/memes`),
+        axios.get(`${API_URL}/memes`, { params }),
         axios.get(`${API_URL}/categories`),
         axios.get(`${API_URL}/stats/categories`)
       ]);
       setMemes(memesRes.data);
       setCategories(categoriesRes.data);
       setStats(statsRes.data);
-      if (categoriesRes.data.length > 0) {
+      if (categoriesRes.data.length > 0 && !uploadData.categoryId) {
         setUploadData(prev => ({ ...prev, categoryId: categoriesRes.data[0].id }));
       }
     } catch (err) {
@@ -119,7 +133,7 @@ export default function Dashboard({ user }) {
     } catch (err) { setError('Failed to add comment'); }
   };
 
-  const filteredMemes = activeFilter === 'All' ? memes : memes.filter(m => m.category === activeFilter);
+  const displayedMemes = memes;
 
   const renderMemeMedia = (meme) => {
     if (meme.memeType === 'text') {
@@ -146,7 +160,7 @@ export default function Dashboard({ user }) {
     );
   };
 
-  if (loading) return (
+  if (loading && memes.length === 0) return (
     <div className="container mt-4">
       <div className="page-header">
         <div style={{ height: '3rem', width: '200px', background: 'var(--surface-color)', boxShadow: 'var(--shadow-inset)', borderRadius: 'var(--radius-md)' }}></div>
@@ -171,7 +185,7 @@ export default function Dashboard({ user }) {
 
   return (
     <div className="container">
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '1.5rem' }}>
         <div>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '0.25rem', color: 'var(--primary-color)', letterSpacing: '-0.02em' }}>Meme Feed</h1>
           <p style={{ fontSize: '1.05rem' }}>Discover the latest and greatest memes.</p>
@@ -179,6 +193,37 @@ export default function Dashboard({ user }) {
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn" onClick={() => setShowStatsModal(true)}><BarChart3 size={18} /> Stats</button>
           <button className="btn btn-primary" onClick={() => setShowUploadModal(true)} style={{ boxShadow: 'var(--shadow-outset)' }}><Plus size={18} /> Upload Meme</button>
+        </div>
+      </div>
+
+      {/* Search & Sort Bar */}
+      <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, position: 'relative', minWidth: '300px' }}>
+          <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }} />
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Search memes by title or description..."
+            style={{ paddingLeft: '3rem', fontSize: '1.05rem' }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--surface-color)', padding: '0.4rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-inset)' }}>
+          <button
+            className="btn"
+            style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', boxShadow: sortOrder === 'latest' ? 'var(--shadow-outset-sm)' : 'none', background: sortOrder === 'latest' ? 'var(--surface-color)' : 'transparent', color: sortOrder === 'latest' ? 'var(--primary-color)' : 'var(--text-muted)' }}
+            onClick={() => setSortOrder('latest')}
+          >
+            <Clock size={16} /> Latest
+          </button>
+          <button
+            className="btn"
+            style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', boxShadow: sortOrder === 'trending' ? 'var(--shadow-outset-sm)' : 'none', background: sortOrder === 'trending' ? 'var(--surface-color)' : 'transparent', color: sortOrder === 'trending' ? 'var(--primary-color)' : 'var(--text-muted)' }}
+            onClick={() => setSortOrder('trending')}
+          >
+            <TrendingUp size={16} /> Trending
+          </button>
         </div>
       </div>
 
@@ -207,20 +252,20 @@ export default function Dashboard({ user }) {
       </div>
 
       <div className="meme-grid">
-        {filteredMemes.length === 0 ? (
+        {displayedMemes.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '6rem 0', background: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-inset)', margin: '1rem 0' }}>
             <div style={{ display: 'inline-flex', padding: '2rem', borderRadius: '50%', boxShadow: 'var(--shadow-outset)', marginBottom: '2rem', color: 'var(--text-muted)' }}>
               <ImageIcon size={48} style={{ opacity: 0.3 }} />
             </div>
-            <h3 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>No memes found in {activeFilter}</h3>
-            <p style={{ marginBottom: '2rem' }}>Be the first to upload a meme or try another category!</p>
+            <h3 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>No memes found</h3>
+            <p style={{ marginBottom: '2rem' }}>Be the first to upload a meme or try another filter!</p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button className="btn" onClick={() => setActiveFilter('All')}>View All Memes</button>
+              <button className="btn" onClick={() => { setActiveFilter('All'); setSearchTerm(''); }}>Clear Filters</button>
               <button className="btn btn-primary" onClick={() => setShowUploadModal(true)}>Upload Now</button>
             </div>
           </div>
         ) : (
-          filteredMemes.map(meme => (
+          displayedMemes.map(meme => (
             <div key={meme.id} className="meme-card">
               {renderMemeMedia(meme)}
               <div className="meme-content">
