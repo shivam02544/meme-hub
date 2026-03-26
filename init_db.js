@@ -109,7 +109,43 @@ const statements = [
 
     // Phase 3 Migration: Multi-format memes
     `ALTER TABLE Memes ADD meme_type VARCHAR2(10) DEFAULT 'image'`,
-    `ALTER TABLE Memes MODIFY image_url NULL`
+    `ALTER TABLE Memes MODIFY image_url NULL`,
+
+    // Phase 4: Likes table
+    `CREATE TABLE Likes (
+        like_id NUMBER PRIMARY KEY,
+        user_id NUMBER NOT NULL,
+        meme_id NUMBER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_likes_user FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+        CONSTRAINT fk_likes_meme FOREIGN KEY (meme_id) REFERENCES Memes(meme_id) ON DELETE CASCADE,
+        CONSTRAINT uq_likes UNIQUE (user_id, meme_id)
+    )`,
+    `CREATE SEQUENCE likes_seq START WITH 1 INCREMENT BY 1`,
+    `CREATE OR REPLACE TRIGGER likes_bir
+    BEFORE INSERT ON Likes
+    FOR EACH ROW
+    BEGIN
+      SELECT likes_seq.NEXTVAL INTO :new.like_id FROM dual;
+    END;`,
+
+    // Phase 4: Comments table
+    `CREATE TABLE Comments (
+        comment_id NUMBER PRIMARY KEY,
+        user_id NUMBER NOT NULL,
+        meme_id NUMBER NOT NULL,
+        content CLOB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+        CONSTRAINT fk_comments_meme FOREIGN KEY (meme_id) REFERENCES Memes(meme_id) ON DELETE CASCADE
+    )`,
+    `CREATE SEQUENCE comments_seq START WITH 1 INCREMENT BY 1`,
+    `CREATE OR REPLACE TRIGGER comments_bir
+    BEFORE INSERT ON Comments
+    FOR EACH ROW
+    BEGIN
+      SELECT comments_seq.NEXTVAL INTO :new.comment_id FROM dual;
+    END;`
 ];
 
 async function run() {

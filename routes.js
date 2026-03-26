@@ -263,7 +263,9 @@ router.get('/memes', async (req, res) => {
         const pool = getPool();
         connection = await pool.getConnection();
         const result = await connection.execute(
-            `SELECT m.meme_id, m.title, m.image_url, m.description, m.created_at, u.name as author, c.name as category, m.meme_type 
+            `SELECT m.meme_id, m.title, m.image_url, m.description, m.created_at, u.name as author, c.name as category, m.meme_type,
+                    (SELECT COUNT(*) FROM Likes l WHERE l.meme_id = m.meme_id) as like_count,
+                    (SELECT COUNT(*) FROM Comments cm WHERE cm.meme_id = m.meme_id) as comment_count
              FROM Memes m
              JOIN Users u ON m.user_id = u.user_id
              LEFT JOIN Categories c ON m.category_id = c.category_id
@@ -277,7 +279,9 @@ router.get('/memes', async (req, res) => {
             createdAt: row[4],
             author: row[5],
             category: row[6],
-            memeType: row[7] || 'image'
+            memeType: row[7] || 'image',
+            likeCount: row[8] || 0,
+            commentCount: row[9] || 0
         }));
         res.json(memes);
     } catch (err) {
@@ -409,6 +413,103 @@ router.get('/stats/categories', async (req, res) => {
             count: row[1]
         }));
         res.json(stats);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
+
+// ============ LIKES & COMMENTS ============
+
+// Toggle like
+router.post('/memes/:id/like', authenticateToken, async (req, res) => {
+    const memeId = req.params.id;
+    let connection;
+    try {
+        const pool = getPool();
+        connection = await pool.getConnection();
+
+        // Check if already liked
+        const existing = await connection.execute(
+            `SELECT like_id FROM Likes WHERE user_id = :userId AND meme_id = :memeId`,
+            { userId: req.user.userId, memeId }
+        );
+
+        if (existing.rows.length > 0) {
+            // Unlike
+            await connection.execute(
+                `DELETE FROM Likes WHERE user_id = :userId AND meme_id = :memeId`,
+                { userId: req.user.userId, memeId },
+                { autoCommit: true }
+            );
+            res.json({ liked: false });
+        } else {
+            // Like
+            await connection.execute(
+                `INSERT INTO Likes (user_id, meme_id) VALUES (:userId, :memeId)`,
+                { userId: req.user.userId, memeId },
+                { autoCommit: true }
+            );
+            res.json({ liked: true });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
+
+// Get comments for a meme
+router.get('/memes/:id/comments', async (req, res) => {
+    const memeId = req.params.id;
+    let connection;
+    try {
+        const pool = getPool();
+        connection = await pool.getConnection();
+        const result = await connection.execute(
+            `SELECT c.comment_id, c.content, c.created_at, u.name as author
+             FROM Comments c
+             JOIN Users u ON c.user_id = u.user_id
+             WHERE c.meme_id = :memeId
+             ORDER BY c.created_at ASC`,
+            { memeId }
+        );
+        const comments = result.rows.map(row => ({
+            id: row[0],
+            content: row[1],
+            createdAt: row[2],
+            author: row[3]
+        }));
+        res.json(comments);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
+
+// Post a comment
+router.post('/memes/:id/comments', authenticateToken, async (req, res) => {
+    const memeId = req.params.id;
+    const { content } = req.body;
+    if (!content || content.trim().length === 0) {
+        return res.status(400).json({ error: 'Comment content is required' });
+    }
+    let connection;
+    try {
+        const pool = getPool();
+        connection = await pool.getConnection();
+        await connection.execute(
+            `INSERT INTO Comments (user_id, meme_id, content) VALUES (:userId, :memeId, :content)`,
+            { userId: req.user.userId, memeId, content: content.trim() },
+            { autoCommit: true }
+        );
+        await logActivity(req.user.userId, 'ADD_COMMENT', `Commented on meme ${memeId}`);
+        res.status(201).json({ message: 'Comment added successfully' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });

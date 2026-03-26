@@ -28,7 +28,7 @@
 **Requirements**: REQ-03, REQ-04, REQ-05
 
 ### Phase 4: Interaction Features (Feeds, Likes, Comments)
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Develop the feed view, category filtering, flat commenting, and liking logic on both frontend and backend.
 **Requirements**: REQ-06, REQ-07, REQ-08
 
