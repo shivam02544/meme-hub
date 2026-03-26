@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import UserProfile from './pages/UserProfile';
 import Navbar from './components/Navbar';
 
 function App() {
@@ -56,6 +57,10 @@ function App() {
             <Route 
               path="/profile" 
               element={user ? <Profile user={user} onUserUpdate={handleUserUpdate} /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/user/:id" 
+              element={user ? <UserProfile /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/" 

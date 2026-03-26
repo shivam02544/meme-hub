@@ -445,8 +445,33 @@ router.get('/stats/categories', async (req, res) => {
         if (connection) await connection.close();
     }
 });
+// Get public profile info
+router.get('/users/:id/profile', async (req, res) => {
+    let connection;
+    const userId = req.params.id;
+    try {
+        const pool = getPool();
+        connection = await pool.getConnection();
+        const result = await connection.execute(
+            `SELECT name, email, created_at,
+                    (SELECT COUNT(*) FROM Memes WHERE user_id = :userId) as meme_count
+             FROM Users WHERE user_id = :userId`,
+            { userId }
+        );
 
-// ============ LIKES & COMMENTS ============
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const [name, email, createdAt, memeCount] = result.rows[0];
+        res.json({ userId, name, email, createdAt, memeCount });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
 
 // Toggle like
 router.post('/memes/:id/like', authenticateToken, async (req, res) => {

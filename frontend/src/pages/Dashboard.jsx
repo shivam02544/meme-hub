@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Image as ImageIcon, BarChart3, Trash2, FileText, Video, Upload, Heart, MessageCircle, Send, Search, TrendingUp, Clock } from 'lucide-react';
+import { Plus, Image as ImageIcon, BarChart3, Trash2, FileText, Video, Upload, Heart, MessageCircle, Send, Search, TrendingUp, Clock, User as UserIcon } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -268,10 +269,16 @@ export default function Dashboard({ user }) {
           displayedMemes.map(meme => (
             <div key={meme.id} className="meme-card">
               {renderMemeMedia(meme)}
-              <div className="meme-content">
-                <h3 className="meme-title">{meme.title}</h3>
+              <div className="meme-content" style={{ padding: '1.25rem 1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <Link to={`/user/${meme.userId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none', color: 'var(--primary-color)', fontWeight: 600, fontSize: '0.85rem' }}>
+                    <UserIcon size={14} /> @{meme.author}
+                  </Link>
+                  <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{new Date(meme.createdAt).toLocaleDateString()}</span>
+                </div>
+                <h3 className="meme-title" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>{meme.title}</h3>
                 {meme.memeType !== 'text' && (
-                  <p style={{ fontSize: '0.9rem', marginBottom: '0.75rem', flex: 1 }}>{meme.description}</p>
+                  <p style={{ fontSize: '0.9rem', marginBottom: '1rem', flex: 1, color: 'var(--text-muted)' }}>{meme.description}</p>
                 )}
 
                 {/* Like & Comment Actions */}
