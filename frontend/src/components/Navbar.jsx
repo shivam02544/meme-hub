@@ -5,9 +5,9 @@ import { LogOut, Layout, User } from 'lucide-react';
 export default function Navbar({ user, onLogout }) {
   return (
     <nav className="navbar">
-      <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="container">
         <Link to="/" className="nav-brand">
-          <Layout color="var(--primary-color)" />
+          <Layout size={24} color="var(--primary-color)" />
           <span>MemeHub</span>
         </Link>
         <div className="nav-links">

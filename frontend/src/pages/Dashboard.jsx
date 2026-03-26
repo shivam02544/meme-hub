@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Image as ImageIcon, BarChart3, Trash2, FileText, Video, Upload, Heart, MessageCircle, Send, Search, TrendingUp, Clock, User as UserIcon } from 'lucide-react';
+import { Plus, BarChart3, Search, TrendingUp, Clock, Image as ImageIcon, Video, FileText, Upload } from 'lucide-react';
+import MemeCard from '../components/MemeCard';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -21,10 +22,7 @@ export default function Dashboard({ user }) {
   const [uploadData, setUploadData] = useState({ title: '', description: '', categoryId: '' });
   const [file, setFile] = useState(null);
 
-  // Comments state per meme
-  const [expandedComments, setExpandedComments] = useState({});
-  const [commentsData, setCommentsData] = useState({});
-  const [newComment, setNewComment] = useState({});
+  // Note: uploadData, categories, stats are still needed here
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -59,6 +57,11 @@ export default function Dashboard({ user }) {
         setUploadData(prev => ({ ...prev, categoryId: categoriesRes.data[0].id }));
       }
     } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
       setError('Failed to fetch data');
     } finally {
       setLoading(false);
@@ -107,59 +110,19 @@ export default function Dashboard({ user }) {
       setMemes(prev => prev.map(m => m.id === memeId ? {
         ...m, likeCount: res.data.liked ? m.likeCount + 1 : m.likeCount - 1
       } : m));
-    } catch (err) { setError('Failed to like meme'); }
-  };
-
-  const toggleComments = async (memeId) => {
-    if (expandedComments[memeId]) {
-      setExpandedComments(prev => ({ ...prev, [memeId]: false }));
-      return;
+    } catch (err) { 
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+      setError('Failed to like meme'); 
     }
-    try {
-      const res = await axios.get(`${API_URL}/memes/${memeId}/comments`);
-      setCommentsData(prev => ({ ...prev, [memeId]: res.data }));
-      setExpandedComments(prev => ({ ...prev, [memeId]: true }));
-    } catch (err) { setError('Failed to load comments'); }
-  };
-
-  const handleAddComment = async (memeId) => {
-    const content = newComment[memeId];
-    if (!content?.trim()) return;
-    try {
-      await axios.post(`${API_URL}/memes/${memeId}/comments`, { content }, getHeaders());
-      setNewComment(prev => ({ ...prev, [memeId]: '' }));
-      const res = await axios.get(`${API_URL}/memes/${memeId}/comments`);
-      setCommentsData(prev => ({ ...prev, [memeId]: res.data }));
-      setMemes(prev => prev.map(m => m.id === memeId ? { ...m, commentCount: m.commentCount + 1 } : m));
-    } catch (err) { setError('Failed to add comment'); }
   };
 
   const displayedMemes = memes;
 
-  const renderMemeMedia = (meme) => {
-    if (meme.memeType === 'text') {
-      return (
-        <div className="meme-text-content">
-          <FileText size={28} style={{ opacity: 0.4, marginBottom: '0.75rem' }} />
-          <p style={{ fontSize: '1.1rem', color: 'var(--text-active)', fontWeight: 500, lineHeight: 1.6 }}>{meme.description}</p>
-        </div>
-      );
-    }
-    if (meme.memeType === 'video') {
-      return (
-        <div className="meme-image-wrapper">
-          <video controls className="meme-image" style={{ objectFit: 'contain' }}>
-            <source src={meme.imageUrl} />
-          </video>
-        </div>
-      );
-    }
-    return (
-      <div className="meme-image-wrapper">
-        <img src={meme.imageUrl} alt={meme.title} className="meme-image" onError={(e) => { e.target.src = 'https://via.placeholder.com/400?text=Invalid+Image+URL' }} />
-      </div>
-    );
-  };
+  // renderMemeMedia moved to MemeCard
 
   if (loading && memes.length === 0) return (
     <div className="container mt-4">
@@ -186,20 +149,20 @@ export default function Dashboard({ user }) {
 
   return (
     <div className="container">
-      <div className="page-header" style={{ marginBottom: '1.5rem' }}>
+      <div className="dashboard-header">
         <div>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '0.25rem', color: 'var(--primary-color)', letterSpacing: '-0.02em' }}>Meme Feed</h1>
           <p style={{ fontSize: '1.05rem' }}>Discover the latest and greatest memes.</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="dashboard-actions">
           <button className="btn" onClick={() => setShowStatsModal(true)}><BarChart3 size={18} /> Stats</button>
           <button className="btn btn-primary" onClick={() => setShowUploadModal(true)} style={{ boxShadow: 'var(--shadow-outset)' }}><Plus size={18} /> Upload Meme</button>
         </div>
       </div>
 
       {/* Search & Sort Bar */}
-      <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, position: 'relative', minWidth: '300px' }}>
+      <div className="control-bar">
+        <div className="search-wrapper">
           <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }} />
           <input
             type="text"
@@ -210,7 +173,7 @@ export default function Dashboard({ user }) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--surface-color)', padding: '0.4rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-inset)' }}>
+        <div className="sort-tabs">
           <button
             className="btn"
             style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', boxShadow: sortOrder === 'latest' ? 'var(--shadow-outset-sm)' : 'none', background: sortOrder === 'latest' ? 'var(--surface-color)' : 'transparent', color: sortOrder === 'latest' ? 'var(--primary-color)' : 'var(--text-muted)' }}
@@ -256,7 +219,7 @@ export default function Dashboard({ user }) {
         {displayedMemes.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '6rem 0', background: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-inset)', margin: '1rem 0' }}>
             <div style={{ display: 'inline-flex', padding: '2rem', borderRadius: '50%', boxShadow: 'var(--shadow-outset)', marginBottom: '2rem', color: 'var(--text-muted)' }}>
-              <ImageIcon size={48} style={{ opacity: 0.3 }} />
+              <Search size={48} style={{ opacity: 0.3 }} />
             </div>
             <h3 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>No memes found</h3>
             <p style={{ marginBottom: '2rem' }}>Be the first to upload a meme or try another filter!</p>
@@ -267,78 +230,17 @@ export default function Dashboard({ user }) {
           </div>
         ) : (
           displayedMemes.map(meme => (
-            <div key={meme.id} className="meme-card">
-              {renderMemeMedia(meme)}
-              <div className="meme-content" style={{ padding: '1.25rem 1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <Link to={`/user/${meme.userId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none', color: 'var(--primary-color)', fontWeight: 600, fontSize: '0.85rem' }}>
-                    <UserIcon size={14} /> @{meme.author}
-                  </Link>
-                  <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{new Date(meme.createdAt).toLocaleDateString()}</span>
-                </div>
-                <h3 className="meme-title" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>{meme.title}</h3>
-                {meme.memeType !== 'text' && (
-                  <p style={{ fontSize: '0.9rem', marginBottom: '1rem', flex: 1, color: 'var(--text-muted)' }}>{meme.description}</p>
-                )}
-
-                {/* Like & Comment Actions */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
-                  <button className="btn" style={{ padding: '0.3rem 0.7rem', fontSize: '0.8rem' }} onClick={() => handleLike(meme.id)}>
-                    <Heart size={14} fill={meme.likeCount > 0 ? 'var(--accent-color)' : 'none'} color="var(--accent-color)" />
-                    {meme.likeCount}
-                  </button>
-                  <button className="btn" style={{ padding: '0.3rem 0.7rem', fontSize: '0.8rem' }} onClick={() => toggleComments(meme.id)}>
-                    <MessageCircle size={14} />
-                    {meme.commentCount}
-                  </button>
-                </div>
-
-                {/* Comments Section */}
-                {expandedComments[meme.id] && (
-                  <div style={{ boxShadow: 'var(--shadow-inset)', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '0.75rem' }}>
-                    {commentsData[meme.id]?.length === 0 ? (
-                      <p style={{ fontSize: '0.8rem', textAlign: 'center' }}>No comments yet</p>
-                    ) : (
-                      commentsData[meme.id]?.map(c => (
-                        <div key={c.id} style={{ marginBottom: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
-                          <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{c.author}</span>
-                          <p style={{ fontSize: '0.85rem', margin: '0.2rem 0 0' }}>{c.content}</p>
-                        </div>
-                      ))
-                    )}
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <input
-                        className="form-input"
-                        style={{ padding: '0.4rem 0.6rem', fontSize: '0.8rem', flex: 1 }}
-                        placeholder="Add a comment..."
-                        value={newComment[meme.id] || ''}
-                        onChange={e => setNewComment(prev => ({ ...prev, [meme.id]: e.target.value }))}
-                        onKeyDown={e => e.key === 'Enter' && handleAddComment(meme.id)}
-                      />
-                      <button className="btn" style={{ padding: '0.4rem 0.6rem' }} onClick={() => handleAddComment(meme.id)}>
-                        <Send size={14} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="meme-meta">
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <span className="badge">{meme.category || 'Uncategorized'}</span>
-                    <span className="badge" style={{ fontSize: '0.65rem' }}>{meme.memeType}</span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>by {meme.author}</span>
-                  </div>
-                  {user.name === meme.author && (
-                    <button onClick={() => handleDelete(meme.id)} className="btn" style={{ padding: '0.3rem 0.5rem', color: 'var(--danger-color)' }} title="Delete Meme">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+            <MemeCard 
+              key={meme.id} 
+              meme={meme} 
+              onLike={handleLike} 
+              onDelete={handleDelete}
+              currentUser={user}
+            />
           ))
         )}
       </div>
+
 
       {/* Upload Modal */}
       {showUploadModal && (

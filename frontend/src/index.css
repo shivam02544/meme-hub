@@ -155,17 +155,94 @@ p { color: var(--text-muted); }
   top: 0;
   z-index: 50;
   background-color: var(--surface-color);
-  padding: 1rem 0;
+  padding: 0.75rem 0;
   box-shadow: var(--shadow-outset-sm);
   margin-bottom: 2rem;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
 }
 
-.navbar .container { display: flex; justify-content: space-between; align-items: center; }
-.nav-brand { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; text-shadow: 1px 1px 2px rgba(255,255,255,0.7); }
+.navbar .container { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .navbar .container {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 1rem;
+  }
+  .nav-brand span { display: none; } /* Hide text on small mobile */
+  .nav-links { gap: 0.75rem; }
+}
+
+.nav-brand { 
+  font-size: 1.5rem; 
+  font-weight: 700; 
+  color: var(--primary-color); 
+  text-decoration: none; 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+}
+
 .nav-links { display: flex; align-items: center; gap: 1.5rem; }
 
-/* Dashboard & Cards */
-.page-header { display: flex; justify-content: space-between; align-items: center; margin: 2rem 0; }
+/* Dashboard Header & Controls */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1.5rem;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dashboard-actions {
+    flex-direction: row;
+    justify-content: stretch;
+  }
+  .dashboard-actions .btn {
+    flex: 1;
+  }
+}
+
+.control-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-wrapper {
+  flex: 1;
+  position: relative;
+  min-width: 280px;
+}
+
+.sort-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--surface-color);
+  padding: 0.3rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-inset);
+  border: 1px solid var(--glass-border);
+}
 .meme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2.5rem; padding-bottom: 4rem; }
 
 .meme-card {
