@@ -101,7 +101,15 @@ const statements = [
     `INSERT INTO Categories (name, description) VALUES ('Dank Memes', 'The dankest of the dank.')`,
     `INSERT INTO Categories (name, description) VALUES ('Wholesome', 'Memes that make you smile.')`,
     `INSERT INTO Categories (name, description) VALUES ('Programming', 'Relatable dev struggles.')`,
-    `INSERT INTO Categories (name, description) VALUES ('Animals', 'Funny pets and wildlife.')`
+    `INSERT INTO Categories (name, description) VALUES ('Animals', 'Funny pets and wildlife.')`,
+    `INSERT INTO Categories (name, description) VALUES ('Funny', 'Generally funny memes.')`,
+    `INSERT INTO Categories (name, description) VALUES ('Coding', 'Code-related humor.')`,
+    `INSERT INTO Categories (name, description) VALUES ('Gaming', 'Game-related memes.')`,
+    `INSERT INTO Categories (name, description) VALUES ('Sports', 'Sports memes.')`,
+
+    // Phase 3 Migration: Multi-format memes
+    `ALTER TABLE Memes ADD meme_type VARCHAR2(10) DEFAULT 'image'`,
+    `ALTER TABLE Memes MODIFY image_url NULL`
 ];
 
 async function run() {
@@ -129,6 +137,8 @@ async function run() {
                 } else if (err.errorNum === 2289) {
                     // sequence doesn't exist
                 } else if (err.errorNum === 1) { // unique constraint on insert
+                } else if (err.errorNum === 1430) { // column already exists
+                } else if (err.errorNum === 1451) { // column already nullable
                 } else {
                     console.error("Error executing:", sql.substring(0, 50));
                     console.error(err.message);

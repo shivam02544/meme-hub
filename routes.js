@@ -429,12 +429,12 @@ router.put('/users/profile', authenticateToken, async (req, res) => {
         }
         connection = await getPool().getConnection();
         await connection.execute(
-            `UPDATE Users SET name = :name WHERE id = :id`,
-            { name: name.trim(), id: req.user.id },
+            `UPDATE Users SET name = :name WHERE user_id = :userId`,
+            { name: name.trim(), userId: req.user.userId },
             { autoCommit: true }
         );
-        await logActivity(connection, req.user.id, 'PROFILE_UPDATE', `Updated name to ${name.trim()}`);
-        res.json({ message: 'Profile updated successfully', user: { id: req.user.id, name: name.trim(), email: req.user.email } });
+        await logActivity(req.user.userId, 'PROFILE_UPDATE', `Updated name to ${name.trim()}`);
+        res.json({ message: 'Profile updated successfully', user: { userId: req.user.userId, name: name.trim(), email: req.user.email } });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });
