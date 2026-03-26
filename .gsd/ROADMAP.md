@@ -1,45 +1,31 @@
 # ROADMAP.md
 
-> **Current Phase**: Finalized
-> **Milestone**: v1.0 [COMPLETE]
+> **Current Milestone**: v1.1 - UI Refactor and Feature Enhancement
+> **Goal**: Fix broken UI, add category filtering improvements, and upgrade the UI to modern liquid glass (glassmorphism) design.
 
-## Must-Haves (from SPEC)
-- [x] User Auth (Register, Login, OTP)
-- [x] File Upload handling (Local FS)
-- [x] Meme creation (Text, Image, Video) mapping to Oracle DB
-- [x] Like and Comment systems
-- [x] Skeuomorphic UI Design and responsive layouts
+## Must-Haves
+- [ ] Glassmorphism design system (blur, transparency, border glows)
+- [ ] Responsive layout fixes (mobile/tablet/desktop)
+- [ ] Improved category filtering UI/UX
+- [ ] Stability and performance pass
 
 ## Phases
 
-### Phase 1: Foundation & Skeuomorphic Design System (CSS/UI)
-**Status**: ✅ Complete
-**Objective**: Setup global CSS, styling variables for soft shadows/gradients, layout components (Navbar, Container), and apply responsiveness.
-**Requirements**: REQ-09
+### Phase 1: Foundation & Glassmorphism Design System
+**Status**: ⬜ Not Started
+**Objective**: Setup glassmorphism CSS primitives (backdrop-filters, variable transparency) and update the global design tokens.
 
-### Phase 2: User Profiles & Advanced Auth (Frontend + Backend)
-**Status**: ✅ Complete
-**Objective**: Build out the user profile edit functionality, integrate and stabilize the existing Express OTP auth flow with the new UI.
-**Requirements**: REQ-01, REQ-02
+### Phase 2: UI Fixes & Layout Stabilization
+**Status**: ⬜ Not Started
+**Objective**: Resolve all alignment and responsiveness issues identified in Dashboard, Profile, and MemeCard components.
 
-### Phase 3: Media Uploads & Meme Management
-**Status**: ✅ Complete
-**Objective**: Implement local filesystem upload endpoints in Node, frontend forms for image/video/text memes, and database persistence.
-**Requirements**: REQ-03, REQ-04, REQ-05
+### Phase 3: Enhanced Category Filtering
+**Status**: ⬜ Not Started
+**Objective**: Refine the category selection experience with better visual feedback and smoother filtering transitions.
 
-### Phase 4: Interaction Features (Feeds, Likes, Comments)
-**Status**: ✅ Complete
-**Objective**: Develop the feed view, category filtering, flat commenting, and liking logic on both frontend and backend.
-**Requirements**: REQ-06, REQ-07, REQ-08
-
-### Phase 5: Polish, Testing, and Launch
-**Status**: ✅ Complete
-**Objective**: End-to-end testing across devices, finalize skeuomorphic refinements, fix bugs, and ensure constraints are met.
-**Requirements**: REQ-01, REQ-02, REQ-03, REQ-04, REQ-05, REQ-06, REQ-07, REQ-08, REQ-09
-
-### Phase 6: Discovery & Enhanced Interaction
-**Status**: ✅ Complete
-**Objective**: Implement search functionality, trending/popularity sorting, and public profile views to increase user engagement.
+### Phase 4: Final Polish & Verification
+**Status**: ⬜ Not Started
+**Objective**: Final visual audit, accessibility pass, and end-to-end verification of the new glassmorphism aesthetic.
 
 ---
-**Current Status**: 🚀 Milestone v1.1 Achieved. Ready for Production.
+**Current Status**: 🛠️ Planning Milestone v1.1. Analytics/Admin features removed per scope constraints.
