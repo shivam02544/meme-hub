@@ -11,6 +11,7 @@ export default function Dashboard({ user }) {
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filtering, setFiltering] = useState(false);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,7 +27,8 @@ export default function Dashboard({ user }) {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      fetchData();
+      // Pass isFilter=true for category/sort changes so only the bar shows busy
+      fetchData(!searchTerm);
     }, 400);
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, activeFilter, sortOrder]);
@@ -35,8 +37,8 @@ export default function Dashboard({ user }) {
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   });
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (isFilter = false) => {
+    if (isFilter) setFiltering(true); else setLoading(true);
     try {
       const catObj = categories.find(c => c.name === activeFilter);
       const params = {
@@ -65,6 +67,7 @@ export default function Dashboard({ user }) {
       setError('Failed to fetch data');
     } finally {
       setLoading(false);
+      setFiltering(false);
     }
   };
 
@@ -194,25 +197,26 @@ export default function Dashboard({ user }) {
       {error && <div className="alert alert-error">{error}</div>}
 
       {/* Category Filter */}
-      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '2.5rem', padding: '0.5rem', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-inset)', background: 'var(--surface-color)' }}>
-        {['All', ...new Set(categories.map(c => c.name))].map(cat => (
-          <button
-            key={cat}
-            className="btn"
-            style={{
-              padding: '0.5rem 1.25rem', fontSize: '0.9rem',
-              boxShadow: activeFilter === cat ? 'var(--shadow-inset)' : 'none',
-              background: activeFilter === cat ? 'transparent' : 'var(--surface-color)',
-              color: activeFilter === cat ? 'var(--primary-color)' : 'var(--text-muted)',
-              fontWeight: activeFilter === cat ? 600 : 500,
-              borderRadius: 'var(--radius-md)',
-              border: activeFilter === cat ? 'none' : '1px solid rgba(255,255,255,0.3)'
-            }}
-            onClick={() => setActiveFilter(cat)}
-          >
-            {cat}
-          </button>
-        ))}
+      <div className="category-bar">
+        {['All', ...categories.map(c => c.name)].map(cat => {
+          const catStat = stats.find(s => s.category === cat);
+          const count = cat === 'All'
+            ? stats.reduce((sum, s) => sum + (Number(s.count) || 0), 0)
+            : (catStat ? catStat.count : 0);
+          return (
+            <div
+              key={cat}
+              className={`category-chip${activeFilter === cat ? ' active' : ''}`}
+              onClick={() => setActiveFilter(cat)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && setActiveFilter(cat)}
+            >
+              {cat}
+              <span className="category-count">{count}</span>
+            </div>
+          );
+        })}
       </div>
 
       <div className="meme-grid">
