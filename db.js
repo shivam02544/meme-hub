@@ -9,6 +9,9 @@ try {
     console.error('Whoops! Thick mode error:', err);
 }
 
+// Global configuration to fetch CLOBs as strings to avoid handle leaks in JSON
+oracledb.fetchAsString = [ oracledb.CLOB ];
+
 let pool;
 
 export async function initializeDatabase() {
