@@ -1,3 +1,11 @@
 node_modules/
 uploads/
 .env
+
+# GSD and AI Agent files
+.gsd/
+.agent/
+.gemini/
+GSD-STYLE.md
+PROJECT_RULES.md
+model_capabilities.yaml
