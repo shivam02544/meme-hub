@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import UserProfile from './pages/UserProfile';
 import ForgotPassword from './pages/ForgotPassword';
+import System from './pages/System';
 import Navbar from './components/Navbar';
 
 function App() {
@@ -66,6 +67,10 @@ function App() {
             <Route 
               path="/user/:id" 
               element={user ? <UserProfile /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/system" 
+              element={user ? <System /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/" 

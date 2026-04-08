@@ -786,5 +786,39 @@ router.get('/memes/:id', async (req, res) => {
         if (connection) await connection.close();
     }
 });
+// ============ SYSTEM & ACTIVITY LOGS ============
+
+router.get('/system-logs', (req, res) => {
+    res.json(global.systemLogs || []);
+});
+
+router.get('/activity-logs', async (req, res) => {
+    let connection;
+    try {
+        connection = await getPool().getConnection();
+        const result = await connection.execute(
+            `SELECT * FROM (
+                SELECT a.log_id, a.user_id, a.action, a.details, a.log_timestamp as created_at, u.name 
+                FROM Activity_Logs a
+                JOIN Users u ON a.user_id = u.user_id
+                ORDER BY a.log_timestamp DESC
+             ) WHERE ROWNUM <= 50`
+        );
+        const logs = result.rows.map(row => ({
+            id: row[0],
+            userId: row[1],
+            action: row[2],
+            details: row[3],
+            createdAt: row[4],
+            userName: row[5]
+        }));
+        res.json(logs);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
 
 export default router;

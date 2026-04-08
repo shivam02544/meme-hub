@@ -220,7 +220,7 @@ export default function Dashboard({ user }) {
         })}
       </div>
 
-      <div className="meme-grid">
+      <div className="meme-grid animate-fade-in">
         {displayedMemes.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '6rem 0', background: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-inset)', margin: '1rem 0' }}>
             <div style={{ display: 'inline-flex', padding: '2rem', borderRadius: '50%', boxShadow: 'var(--shadow-outset)', marginBottom: '2rem', color: 'var(--text-muted)' }}>

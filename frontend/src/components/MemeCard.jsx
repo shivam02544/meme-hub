@@ -113,7 +113,7 @@ export default function MemeCard({ meme, onLike, onDelete, onEdit, currentUser, 
   };
 
   return (
-    <div className="meme-card">
+    <div className="card-minimal meme-card">
       {renderMedia()}
 
       <div style={{ padding: '1rem 1.25rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -177,11 +177,11 @@ export default function MemeCard({ meme, onLike, onDelete, onEdit, currentUser, 
         {/* Action row */}
         {!editing && (
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: 'auto', paddingTop: '0.5rem' }}>
-            <button className="btn" style={{ padding: '0.3rem 0.65rem', fontSize: '0.8rem' }} onClick={() => onLike(meme.id)}>
+            <button className="btn" style={{ padding: '0.3rem 0.65rem', fontSize: '0.8rem' }} onClick={() => onLike(meme.id)} aria-label="Like meme">
               <Heart size={13} color="var(--accent-color)" />
               <span>{meme.likeCount}</span>
             </button>
-            <button className="btn" style={{ padding: '0.3rem 0.65rem', fontSize: '0.8rem' }} onClick={toggleComments}>
+            <button className="btn" style={{ padding: '0.3rem 0.65rem', fontSize: '0.8rem' }} onClick={toggleComments} aria-label="Toggle comments">
               <MessageCircle size={13} />
               <span>{meme.commentCount}</span>
             </button>
@@ -189,11 +189,11 @@ export default function MemeCard({ meme, onLike, onDelete, onEdit, currentUser, 
             {isOwner && (
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem' }}>
                 <button className="btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.78rem' }}
-                  onClick={() => setEditing(true)} title="Edit">
+                  onClick={() => setEditing(true)} aria-label="Edit meme">
                   <Pencil size={13} />
                 </button>
                 <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.78rem' }}
-                  onClick={() => onDelete(meme.id)} title="Delete">
+                  onClick={() => onDelete(meme.id)} aria-label="Delete meme">
                   <Trash2 size={13} />
                 </button>
               </div>
@@ -222,7 +222,7 @@ export default function MemeCard({ meme, onLike, onDelete, onEdit, currentUser, 
               <input type="text" className="form-input" placeholder="Add a comment..."
                 style={{ height: '2.2rem', fontSize: '0.82rem' }}
                 value={newComment} onChange={e => setNewComment(e.target.value)} />
-              <button type="submit" className="btn btn-primary" style={{ padding: '0 0.65rem' }}>
+              <button type="submit" className="btn btn-primary" style={{ padding: '0 0.65rem' }} aria-label="Send comment">
                 <Send size={13} />
               </button>
             </form>
