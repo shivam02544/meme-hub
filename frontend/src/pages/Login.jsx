@@ -17,13 +17,11 @@ export default function Login({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const res = await axios.post(`${API_URL}/auth/login`, { email, password });
       onLogin(res.data.user, res.data.token);
     } catch (err) {
-      if (err.response && err.response.status === 403) {
-        // Needs OTP verification
+      if (err.response?.status === 403) {
         setShowOtp(true);
         setError('Email not verified. A new OTP has been sent. Please verify to login.');
       } else {
@@ -38,7 +36,6 @@ export default function Login({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const res = await axios.post(`${API_URL}/auth/verify`, { email, otp });
       onLogin(res.data.user, res.data.token);
@@ -68,25 +65,18 @@ export default function Login({ onLogin }) {
           <form onSubmit={handleLogin}>
             <div className="form-group">
               <label className="form-label">Email Address</label>
-              <input 
-                type="email" 
-                className="form-input" 
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required 
-              />
+              <input type="email" className="form-input" placeholder="you@example.com"
+                value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="form-group">
               <label className="form-label">Password</label>
-              <input 
-                type="password" 
-                className="form-input" 
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required 
-              />
+              <input type="password" className="form-input" placeholder="••••••••"
+                value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <div style={{ textAlign: 'right', marginTop: '0.4rem' }}>
+                <Link className="link" to="/forgot-password" style={{ fontSize: '0.82rem' }}>
+                  Forgot password?
+                </Link>
+              </div>
             </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
@@ -96,24 +86,13 @@ export default function Login({ onLogin }) {
           <form onSubmit={handleVerifyOtp}>
             <div className="form-group">
               <label className="form-label">OTP Code</label>
-              <input 
-                type="text" 
-                className="form-input" 
-                placeholder="123456"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                required 
-              />
+              <input type="text" className="form-input" placeholder="123456"
+                value={otp} onChange={(e) => setOtp(e.target.value)} required />
             </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
               {loading ? 'Verifying...' : 'Verify OTP & Login'}
             </button>
-            <button 
-              type="button" 
-              className="btn mt-4" 
-              style={{ width: '100%' }}
-              onClick={() => setShowOtp(false)}
-            >
+            <button type="button" className="btn mt-4" style={{ width: '100%' }} onClick={() => setShowOtp(false)}>
               Back to Login
             </button>
           </form>

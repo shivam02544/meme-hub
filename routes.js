@@ -55,13 +55,55 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-async function sendOTP(email, otp) {
+async function sendOTP(email, otp, type = 'verify') {
+    const isReset = type === 'reset';
+    const subject = isReset
+        ? '🔐 MemeHub Password Reset — Don\'t Ghost Us!'
+        : '🎭 MemeHub OTP — Your Secret Meme Pass Has Arrived!';
+
+    const html = isReset ? `
+        <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;background:#1a1a2e;color:#e0e0e0;border-radius:12px;overflow:hidden;">
+            <div style="background:#e94560;padding:24px;text-align:center;">
+                <h1 style="margin:0;color:#fff;font-size:2rem;">🔐 MemeHub</h1>
+                <p style="margin:4px 0 0;color:#ffd;font-size:0.95rem;">Password Reset Request</p>
+            </div>
+            <div style="padding:28px 32px;">
+                <p style="font-size:1.1rem;">Yo! Someone (hopefully you 👀) wants to reset their password.</p>
+                <p>If it wasn't you — just ignore this email and go back to scrolling memes. 🙃</p>
+                <p style="font-size:1rem;margin-top:20px;">Your reset OTP is:</p>
+                <div style="background:#0f3460;border-radius:10px;padding:20px;text-align:center;margin:16px 0;">
+                    <span style="font-size:2.8rem;font-weight:bold;letter-spacing:10px;color:#e94560;">${otp}</span>
+                </div>
+                <p style="color:#aaa;font-size:0.85rem;">⏰ This code expires in <strong>10 minutes</strong>. Don't let it die like your motivation on Mondays.</p>
+                <hr style="border-color:#333;margin:24px 0;">
+                <p style="color:#666;font-size:0.8rem;text-align:center;">MemeHub — Where every day is a meme day 😂</p>
+            </div>
+        </div>` : `
+        <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;background:#1a1a2e;color:#e0e0e0;border-radius:12px;overflow:hidden;">
+            <div style="background:#e94560;padding:24px;text-align:center;">
+                <h1 style="margin:0;color:#fff;font-size:2rem;">🎭 MemeHub</h1>
+                <p style="margin:4px 0 0;color:#ffd;font-size:0.95rem;">Where memes are life and life is memes</p>
+            </div>
+            <div style="padding:28px 32px;">
+                <p style="font-size:1.1rem;">Ayo! 👋 Welcome to the dankest corner of the internet.</p>
+                <p>Before you start blessing us with your meme collection, we need to make sure you're a real human and not a bot trying to steal our memes. 🤖❌</p>
+                <p style="font-size:1rem;margin-top:20px;">Your secret meme pass (OTP) is:</p>
+                <div style="background:#0f3460;border-radius:10px;padding:20px;text-align:center;margin:16px 0;">
+                    <span style="font-size:2.8rem;font-weight:bold;letter-spacing:10px;color:#e94560;">${otp}</span>
+                </div>
+                <p style="color:#aaa;font-size:0.85rem;">⏰ This code expires in <strong>10 minutes</strong>. Faster than your attention span watching a 30-second video. 😅</p>
+                <p style="color:#aaa;font-size:0.85rem;">🚨 If you didn't sign up — someone out there wants to steal your meme identity. Protect it!</p>
+                <hr style="border-color:#333;margin:24px 0;">
+                <p style="color:#666;font-size:0.8rem;text-align:center;">MemeHub — Because life's too short for bad memes 😂</p>
+            </div>
+        </div>`;
+
     try {
         await transporter.sendMail({
-            from: process.env.EMAIL_USER,
+            from: `"MemeHub 🎭" <${process.env.EMAIL_USER}>`,
             to: email,
-            subject: 'Your OTP for Meme Collection',
-            text: `Your OTP is: ${otp}. It is valid for 10 minutes.`
+            subject,
+            html
         });
     } catch (err) {
         console.error('Failed to send email:', err);
@@ -86,6 +128,12 @@ function authenticateToken(req, res, next) {
 
 router.post('/auth/register', async (req, res) => {
     const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+        return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+    if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
     let connection;
     try {
         const pool = getPool();
@@ -113,7 +161,7 @@ router.post('/auth/register', async (req, res) => {
         );
 
         // Send OTP
-        await sendOTP(email, otp);
+        await sendOTP(email, otp, 'verify');
         await logActivity(userId, 'REGISTER', 'User registered, OTP sent');
 
         res.status(201).json({ message: 'User registered. Please check email for OTP.' });
@@ -154,7 +202,7 @@ router.post('/auth/verify', async (req, res) => {
         await connection.execute(
             `UPDATE OTP_Logs SET is_used = 1 WHERE otp_id = :otpId`,
             { otpId },
-            { autoCommit: false }
+            { autoCommit: true }
         );
 
         await connection.execute(
@@ -215,7 +263,7 @@ router.post('/auth/login', async (req, res) => {
                 { email, otp, expiresAt },
                 { autoCommit: true }
             );
-            await sendOTP(email, otp);
+            await sendOTP(email, otp, 'verify');
             return res.status(403).json({ error: 'Email not verified. A new OTP has been sent.' });
         }
 
@@ -266,11 +314,13 @@ router.get('/memes', async (req, res) => {
 
         let sql = `
             SELECT m.meme_id, m.title, m.image_url, m.description, m.created_at, u.name as author, c.name as category, m.meme_type, m.user_id,
-                   (SELECT COUNT(*) FROM Likes l WHERE l.meme_id = m.meme_id) as like_count,
-                   (SELECT COUNT(*) FROM Comments cm WHERE cm.meme_id = m.meme_id) as comment_count
+                   NVL(lk.like_count, 0) as like_count,
+                   NVL(cm.comment_count, 0) as comment_count
             FROM Memes m
             JOIN Users u ON m.user_id = u.user_id
             LEFT JOIN Categories c ON m.category_id = c.category_id
+            LEFT JOIN (SELECT meme_id, COUNT(*) as like_count FROM Likes GROUP BY meme_id) lk ON lk.meme_id = m.meme_id
+            LEFT JOIN (SELECT meme_id, COUNT(*) as comment_count FROM Comments GROUP BY meme_id) cm ON cm.meme_id = m.meme_id
             WHERE 1=1
         `;
 
@@ -586,6 +636,149 @@ router.put('/users/profile', authenticateToken, async (req, res) => {
         );
         await logActivity(req.user.userId, 'PROFILE_UPDATE', `Updated name to ${name.trim()}`);
         res.json({ message: 'Profile updated successfully', user: { userId: req.user.userId, name: name.trim(), email: req.user.email } });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
+
+// ============ FORGOT / RESET PASSWORD ============
+
+// Step 1: Request password reset OTP
+router.post('/auth/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    let connection;
+    try {
+        connection = await getPool().getConnection();
+        const result = await connection.execute(
+            `SELECT user_id FROM Users WHERE email = :email AND is_verified = 1`,
+            { email }
+        );
+        // Always return success to prevent email enumeration
+        if (result.rows.length === 0) {
+            return res.json({ message: 'If that email exists, a reset OTP has been sent.' });
+        }
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60000);
+        await connection.execute(
+            `INSERT INTO OTP_Logs (email, otp_code, expires_at, is_used) VALUES (:email, :otp, :expiresAt, 0)`,
+            { email, otp, expiresAt },
+            { autoCommit: true }
+        );
+        await sendOTP(email, otp, 'reset');
+        res.json({ message: 'If that email exists, a reset OTP has been sent.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
+
+// Step 2: Verify OTP + set new password
+router.post('/auth/reset-password', async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+        return res.status(400).json({ error: 'Email, OTP, and new password are required' });
+    }
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    let connection;
+    try {
+        connection = await getPool().getConnection();
+        const result = await connection.execute(
+            `SELECT * FROM (SELECT otp_id, expires_at, is_used FROM OTP_Logs WHERE email = :email AND otp_code = :otp ORDER BY created_at DESC) WHERE ROWNUM <= 1`,
+            { email, otp }
+        );
+        if (result.rows.length === 0) return res.status(400).json({ error: 'Invalid OTP' });
+        const [otpId, expiresAt, isUsed] = result.rows[0];
+        if (isUsed === 1) return res.status(400).json({ error: 'OTP already used' });
+        if (new Date() > expiresAt) return res.status(400).json({ error: 'OTP expired' });
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await connection.execute(
+            `UPDATE OTP_Logs SET is_used = 1 WHERE otp_id = :otpId`,
+            { otpId }, { autoCommit: true }
+        );
+        await connection.execute(
+            `UPDATE Users SET password_hash = :hash WHERE email = :email`,
+            { hash: hashedPassword, email }, { autoCommit: true }
+        );
+        res.json({ message: 'Password reset successfully! You can now log in.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
+
+// ============ CHANGE PASSWORD (logged in) ============
+router.put('/users/change-password', authenticateToken, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Current and new password are required' });
+    }
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+    let connection;
+    try {
+        connection = await getPool().getConnection();
+        const result = await connection.execute(
+            `SELECT password_hash FROM Users WHERE user_id = :userId`,
+            { userId: req.user.userId }
+        );
+        const hash = result.rows[0][0];
+        const match = await bcrypt.compare(currentPassword, hash);
+        if (!match) return res.status(401).json({ error: 'Current password is incorrect' });
+
+        const newHash = await bcrypt.hash(newPassword, 10);
+        await connection.execute(
+            `UPDATE Users SET password_hash = :hash WHERE user_id = :userId`,
+            { hash: newHash, userId: req.user.userId }, { autoCommit: true }
+        );
+        await logActivity(req.user.userId, 'CHANGE_PASSWORD', 'User changed their password');
+        res.json({ message: 'Password changed successfully!' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (connection) await connection.close();
+    }
+});
+
+// ============ GET SINGLE MEME ============
+router.get('/memes/:id', async (req, res) => {
+    const { id } = req.params;
+    let connection;
+    try {
+        connection = await getPool().getConnection();
+        const result = await connection.execute(
+            `SELECT m.meme_id, m.title, m.image_url, m.description, m.created_at, m.updated_at,
+                    u.name AS author, u.user_id, c.name AS category, c.category_id, m.meme_type,
+                    NVL(lk.like_count, 0) AS like_count,
+                    NVL(cm.comment_count, 0) AS comment_count
+             FROM Memes m
+             JOIN Users u ON m.user_id = u.user_id
+             LEFT JOIN Categories c ON m.category_id = c.category_id
+             LEFT JOIN (SELECT meme_id, COUNT(*) AS like_count FROM Likes GROUP BY meme_id) lk ON lk.meme_id = m.meme_id
+             LEFT JOIN (SELECT meme_id, COUNT(*) AS comment_count FROM Comments GROUP BY meme_id) cm ON cm.meme_id = m.meme_id
+             WHERE m.meme_id = :id`,
+            { id }
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Meme not found' });
+        const row = result.rows[0];
+        res.json({
+            id: row[0], title: row[1], imageUrl: row[2], description: row[3],
+            createdAt: row[4], updatedAt: row[5], author: row[6], userId: row[7],
+            category: row[8], categoryId: row[9], memeType: row[10] || 'image',
+            likeCount: row[11] || 0, commentCount: row[12] || 0
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });

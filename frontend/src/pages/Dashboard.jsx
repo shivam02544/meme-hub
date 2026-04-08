@@ -11,7 +11,6 @@ export default function Dashboard({ user }) {
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filtering, setFiltering] = useState(false);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,8 +26,7 @@ export default function Dashboard({ user }) {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      // Pass isFilter=true for category/sort changes so only the bar shows busy
-      fetchData(!searchTerm);
+      fetchData();
     }, 400);
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, activeFilter, sortOrder]);
@@ -37,8 +35,8 @@ export default function Dashboard({ user }) {
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   });
 
-  const fetchData = async (isFilter = false) => {
-    if (isFilter) setFiltering(true); else setLoading(true);
+  const fetchData = async () => {
+    setLoading(true);
     try {
       const catObj = categories.find(c => c.name === activeFilter);
       const params = {
@@ -67,7 +65,6 @@ export default function Dashboard({ user }) {
       setError('Failed to fetch data');
     } finally {
       setLoading(false);
-      setFiltering(false);
     }
   };
 
@@ -97,6 +94,10 @@ export default function Dashboard({ user }) {
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to upload meme');
     }
+  };
+
+  const handleEdit = (memeId, updates) => {
+    setMemes(prev => prev.map(m => m.id === memeId ? { ...m, ...updates } : m));
   };
 
   const handleDelete = async (id) => {
@@ -239,7 +240,9 @@ export default function Dashboard({ user }) {
               meme={meme} 
               onLike={handleLike} 
               onDelete={handleDelete}
+              onEdit={handleEdit}
               currentUser={user}
+              categories={categories}
             />
           ))
         )}

@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import UserProfile from './pages/UserProfile';
+import ForgotPassword from './pages/ForgotPassword';
 import Navbar from './components/Navbar';
 
 function App() {
@@ -53,6 +54,10 @@ function App() {
             <Route 
               path="/register" 
               element={!user ? <Register onLogin={handleLogin} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/forgot-password" 
+              element={!user ? <ForgotPassword /> : <Navigate to="/" />} 
             />
             <Route 
               path="/profile" 

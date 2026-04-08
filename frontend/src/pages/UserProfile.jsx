@@ -92,7 +92,7 @@ export default function UserProfile() {
             <MemeCard 
               key={meme.id} 
               meme={meme} 
-              onLike={handleLike} 
+              onLike={handleLike}
             />
           ))
         )}
